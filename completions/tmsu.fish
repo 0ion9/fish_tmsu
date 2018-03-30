@@ -258,11 +258,11 @@ function __fish_tmsu_needs_command
             and continue
             switch $c
                 # General options that can still take a command
-                case "--verbose" "-v" "--database=*" "-D=*"
+                case "--verbose" "-v" "--database=*" "-D=*" "--color=*"
                     continue
                 # General options with an argument we need to skip. The option=value versions
                 # have already been handled above
-                case '--database' '-D'
+                case '--database' '-D' '--color'
                     set skip_next 0
                     continue
                 # General options that cause git to do something and exit - these behave like

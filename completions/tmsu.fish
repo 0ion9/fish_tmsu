@@ -1,5 +1,5 @@
 # tmsu
-# 
+#
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s v -l verbose --description 'show verbose messages.'
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s h -l help --description 'show help and exit.'
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s V -l version --description 'show version inforamtion and exit.'
@@ -10,8 +10,29 @@ complete -c tmsu -n 'set -l c (__fish_tmsu_needs_command); or test $c = help' -f
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -r -l color -a 'auto always never' --description "use color: auto/always/never."
 
 function __fish_expand_userdir -d 'Expand user directory reference. Surely there is a better way to do this.'
-  string replace -r '^~(?=^|/)' "$HOME" $argv
-  # xxx expand other users' homedirs..
+  set argv (string replace -r '^~/' "$HOME/" $argv)
+  set argv (string replace -r '^~$' "$HOME" $argv)
+  set final
+  for a in $argv
+    set len (string length $a)
+    for v in (string match -rn '^~[^~();$/]+(?=/|$)' $a)
+      set start $v[1]
+      set l $v[2]
+      set parts
+      if test $start -gt 1
+        set -a parts (string sub -l (math start-1) $a)
+      end
+      # eval hackery. But reasonably safe since we disallow () $ ;
+      set -a parts (eval "echo "(string sub -s $start -l $l $a))
+      if test (math start+l) -lt len
+        set -a parts (string sub -s (math start+l))
+      end
+      set a (string join '' parts)
+      set len (string length $a)
+    end
+    set -a final $a
+  end
+  printf '%s\n' $final
 end
 
 function __fish_tmsu_db -d 'Return active tmsu DB, given commandline args'
@@ -24,7 +45,7 @@ function __fish_tmsu_db -d 'Return active tmsu DB, given commandline args'
         break
       case '-D=*' '--database=*'
         __fish_expand_userdir (string split -m 1 = -- $a)[2]
-        return 
+        return
       case '-D' '--database'
         set nextarg y
       case '*'
@@ -45,7 +66,7 @@ function __fish_print_tmsu_tags_old
   if test -n "$argv[1]"
     set db (__fish_tmsu_db $argv)
     set arg --database $db
-  end 
+  end
   set -l tok (commandline -t)
   set -l isquoted 0
   if contains (string sub -s 1 -l 1 "$tok") '"' "'"
@@ -75,7 +96,7 @@ function __fish_print_tmsu_tags
   set -l db
   set -l arg
   set -l showops 0
-  set -l ops and or not l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=} 
+  set -l ops and or not l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
   if test "$argv[1]" = "--ops"
     set argv $argv[2..-1]
     set showops 1
@@ -83,7 +104,7 @@ function __fish_print_tmsu_tags
   if test -n "$argv[1]"
     set db (__fish_tmsu_db $argv)
     set arg --database $db
-  end 
+  end
   set -l tok (commandline -t)
   set -l isquoted 0
   if contains (string sub -s 1 -l 1 "$tok") '"' "'"
@@ -118,7 +139,7 @@ function __fish_print_tmsu_tags
       end
     end
   end
-end 
+end
 
 function __fish_print_tmsu_values
   set -l db
@@ -126,7 +147,7 @@ function __fish_print_tmsu_values
   if test -n "$argv[1]"
     set db (__fish_tmsu_db $argv)
     set arg --database $db
-  end 
+  end
   tmsu $arg values
 end
 
@@ -138,7 +159,7 @@ function __fish_print_tmsu_values_for_tag
   if test -n "$argv[1]"
     set db (__fish_tmsu_db $argv)
     set arg --database $db
-  end 
+  end
   tmsu $arg values $tag
 end
 
@@ -150,7 +171,7 @@ function __fish_print_tmsu_tags_or_tvalues
   if test -n "$argv[1]"
     set db (__fish_tmsu_db $argv)
     set arg --database $db
-  end 
+  end
   switch $tag
     # XXX should actually match an unescaped =
     # as is, we sometimes will get f\=oo and look for values
@@ -174,7 +195,7 @@ function __fish_tmsu_has_file
   set subcmd (contains -i tag $cmd; or contains -i untag $cmd)
   if not contains tag $cmd;and not contains untag $cmd
     echo "bailout on" $cmd >> /tmp/wololo
-    return 1; 
+    return 1;
   end
 
   set subcmd $cmd[$subcmd..-1]
@@ -183,7 +204,7 @@ function __fish_tmsu_has_file
   end
   echo "subcmd" $subcmd >> /tmp/wololo
   set -l skip_next 1
-  if test $subcmd[1] = tag; 
+  if test $subcmd[1] = tag;
     echo "tag on - " $subcmd >> /tmp/wololo
     for v in $subcmd[2..-1]
       test $skip_next -eq 0
@@ -192,7 +213,7 @@ function __fish_tmsu_has_file
       switch $v
         case '-c' '--create' '-w' '-w*' '--where' '--where='
           return 0
-	case '-f' '--from' '-f*' '--from=*' 
+	case '-f' '--from' '-f*' '--from=*'
 	  return 1
         case '-t' '--tags'
           set skip_next 0
@@ -331,7 +352,7 @@ complete -c tmsu -n "$co;and __fish_tmsu_has_file" -f -r -a '(__fish_print_tmsu_
 # the values should be fetched (ie. tmsu values $tag)
 # to create tag=value candidates.
 # ( must not follow a comparison operator.
-# 
+#
 complete -c tmsu -n $co -f -r -s w -l where --description 'tags files matching QUERY' -a '(__fish_print_tmsu_tags --ops (commandline -cpo)[2..-1])'
 complete -c tmsu -n $co -f -s r -l recursive --description 'Recursively apply tags to directory contents'
 complete -c tmsu -n $co -r -s f -l from --description 'copy tags from the SOURCE file'
@@ -376,9 +397,9 @@ complete -c tmsu -n $co -a '(__fish_print_tmsu_tags)'
 #  __fish_is_token_n
 # __fish_make_completion_signals
 # __fish_move_last __fish_no_arguments __fish_not_contain_opt
-# __fish_number_of_cmd_args_wo_opts __fish_paginate 
+# __fish_number_of_cmd_args_wo_opts __fish_paginate
 #  __fish_print_addresses __fish_print_cmd_args
-# __fish_print_cmd_args_without_options __fish_print_commands 
+# __fish_print_cmd_args_without_options __fish_print_commands
 # __fish_print_encodings
 # __fish_pwd
 # __fish_reconstruct_path

@@ -1,5 +1,8 @@
 # tmsu
 #
+
+set -l log /tmp/.fishtmsu.log
+
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s v -l verbose --description 'show verbose messages.'
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s h -l help --description 'show help and exit.'
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s V -l version --description 'show version inforamtion and exit.'
@@ -49,7 +52,7 @@ function __fish_tmsu_db -d 'Return active tmsu DB, given commandline args'
       case '-D' '--database'
         set nextarg y
       case '*'
-	echo "db:nextarg=~$nextarg~ a=$a" >> /tmp/wololo
+	echo "db:nextarg=~$nextarg~ a=$a" >> $log
 	if test -n "$nextarg"
           __fish_expand_userdir $a
           return
@@ -72,12 +75,13 @@ function __fish_print_tmsu_tags_old
   if contains (string sub -s 1 -l 1 "$tok") '"' "'"
     set isquoted 1
   end
+  #
   printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok")
-  printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> /tmp/wololo
+  printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> $log
   if test $isquoted = 1; and test (string sub -s -1 -l 1 "$tok") = " "
-    printf "fptt tok!: -%s-\n" $tok >> /tmp/wololo
+    printf "fptt tok!: -%s-\n" $tok >> $log
     set -l prefix (string match -r '.+ ' (string sub -s 2 "$tok"))
-    printf "fptt pre!: -%s-\n" $prefix >> /tmp/wololo
+    printf "fptt pre!: -%s-\n" $prefix >> $log
     tmsu $arg tags | while read t
       echo "$prefix$t"
     end
@@ -105,18 +109,19 @@ function __fish_print_tmsu_tags
     set db (__fish_tmsu_db $argv)
     set arg --database $db
   end
+  # XXX use __fish_commandline_is_singlequoted instead of this hack.
   set -l tok (commandline -t)
   set -l isquoted 0
   if contains (string sub -s 1 -l 1 "$tok") '"' "'"
     set isquoted 1
   end
   printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok")
-  printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> /tmp/wololo
+  printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> $log
   if test $isquoted = 1; and test (string sub -s -1 -l 1 "$tok") = " "
-    printf "fptt tok!: -%s-\n" $tok >> /tmp/wololo
+    printf "fptt tok!: -%s-\n" $tok >> $log
     set -l prefix (string match -r '.+ ' (string sub -s 2 "$tok"))
     set prefix (string trim -rc \"\' $prefix)
-    printf "fptt pre!: -%s-\n" $prefix >> /tmp/wololo
+    printf "fptt pre!: -%s-\n" $prefix >> $log
     tmsu $arg tags | while read t
       echo "$prefix$t"
     end
@@ -194,7 +199,7 @@ function __fish_tmsu_has_file
   end
   set subcmd (contains -i tag $cmd; or contains -i untag $cmd)
   if not contains tag $cmd;and not contains untag $cmd
-    echo "bailout on" $cmd >> /tmp/wololo
+    echo "bailout on" $cmd >> $log
     return 1;
   end
 
@@ -202,10 +207,10 @@ function __fish_tmsu_has_file
   if test (count $subcmd) -eq 1
     return 1
   end
-  echo "subcmd" $subcmd >> /tmp/wololo
+  echo "subcmd" $subcmd >> $log
   set -l skip_next 1
   if test $subcmd[1] = tag;
-    echo "tag on - " $subcmd >> /tmp/wololo
+    echo "tag on - " $subcmd >> $log
     for v in $subcmd[2..-1]
       test $skip_next -eq 0
       and set skip_next 1
@@ -221,7 +226,7 @@ function __fish_tmsu_has_file
         case '-*'
           continue
         case '*'
-          echo "FILED" $v >> /tmp/wololo
+          echo "FILED" $v >> $log
           return 0
       end
     end

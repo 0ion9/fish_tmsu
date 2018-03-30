@@ -271,6 +271,16 @@ complete -c tmsu -n "$co; and not __fish_contains_opt value" -f -a '(__fish_prin
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = dupes' -s r -l recursive --description 'recursively check directory contents'
 
 # files/query
+set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c files query'
+complete -c tmsu -n $co -f -s d -l directory --description 'list only items that are directories'
+complete -c tmsu -n $co -f -s f -l file --description 'list only items that are files'
+complete -c tmsu -n $co -f -s 0 -l print0 --description 'delimit files with a NUL character rather than newline'
+complete -c tmsu -n $co -f -s c -l count --description 'list the number of files rather than their names'
+complete -c tmsu -n $co -r -f -s p -l path --description 'list only items under PATH' -a '(__fish_complete_directories (commandline -ct))'
+complete -c tmsu -n $co -f -s e -l explicit --description 'list only explicitly tagged files'
+complete -c tmsu -n $co -r -f -s s -l sort --description 'sort output by:' -a 'id none name size time'
+complete -c tmsu -n $co -f -s i -l ignore-case --description 'ignore the case of tag and value names'
+# XXX main query completer
 
 # HELP completed
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = help' -f -s l -l list --description 'list commands'
@@ -302,7 +312,7 @@ complete -c tmsu -n "$co; and not __fish_contains_opt value" -f -a '(__fish_prin
 
 # repair/fix
 set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c repair fix'
-complete -c tmsu -n "$co" -f -s p -l path --description 'limit repair to files in database under path'
+complete -c tmsu -n "$co" -f -r -s p -l path --description 'limit repair to files in database under PATH'
 complete -c tmsu -n "$co" -f -s P -l pretend --description 'do not make any changes'
 complete -c tmsu -n "$co" -f -s R -l remove --description 'remove missing files from the database'
 complete -c tmsu -n "$co" -f -s m -l manual --description 'manually relocate files'

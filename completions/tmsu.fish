@@ -50,10 +50,18 @@ function __fish_print_tmsu_tags
   set -l arg
   set -l showops 0
   set -l ops and or not l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
+  set -l values_for_tag
+  echo "fptt: argv = $argv" >> $log
   if test "$argv[1]" = "--ops"
     set argv $argv[2..-1]
     set showops 1
   end
+  if test "$argv[1]" = "--tag"
+    echo "values_for_tag set to $argv[2]" >> $log
+    set values_for_tag $argv[2]
+    set argv $argv[3..-1]
+  end
+
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
     if test -z "$db"
@@ -86,12 +94,29 @@ function __fish_print_tmsu_tags
     if test $isquoted = 1
       set -l prefix (string match -r '.+ ' (string sub -s 2 "$tok"))
       set prefix (string trim -rc \"\' $prefix)
-      tmsu $arg tags | while read t; echo "$prefix$t"; echo "$t "; end
+      begin
+        if test -n "$values_for_tag"; and not contains $values_for_tag '>' '<' '!'
+          echo "q:values_for_tag set to '$values_for_tag'" >> $log
+          tmsu $arg values $values_for_tag | while read v
+            printf '%s=%s\n' $values_for_tag $v
+          end
+        else
+          tmsu $arg tags
+        end
+      end | while read t
+          echo "$prefix$t"; echo "$t "; end
       if test $showops = 1
         for op in $ops; echo "$prefix$op";end
       end
     else
-      tmsu $arg tags
+      if test -n "$values_for_tag"; and not contains $values_for_tag '>' '<' '!'
+        echo "uq:values_for_tag set to '$values_for_tag'" >> $log
+        tmsu $arg values $values_for_tag | while read v
+          printf '%s=%s\n' $values_for_tag $v
+        end
+      else
+        tmsu $arg tags
+      end
       if test $showops = 1
         printf '%s\n' $ops
       end
@@ -214,6 +239,87 @@ function __fish_tmsu_has_file
   return 1
 end
 
+function __fish_tmsu_complete_query
+  echo "cq: " $argv >> $log
+  set -l curtoken (commandline -ct)
+  set -l prevtoken $argv[-1]
+
+  if contains -- $prevtoken -w
+    set prevtoken
+  end
+
+#  if test (count $argv) -ge 2
+#    set prevtoken "$argv[-2]"
+#  end
+
+# * AND/OR must follow a TAG, TAG=VALUE, VALUE, or ) token
+# * NOT may follow anything except a comparison operator.
+# * comparison operators must follow a TAG (not a TAG=VALUE!)
+# * values must be suggested when last token is CMP
+# * 'tag=' versions of plain tags must be suggested (at least
+#   when last token is TAG with no =). When completing them,
+#   the values should be fetched (ie. tmsu values $tag)
+#   to create tag=value candidates.
+# * ( must not follow a comparison operator.
+#
+  set -l list_tags 1
+  set -l list_values
+  set -l values_for_tag
+  set -l logical_ops 'and' 'or' 'not' '(' ')'
+  set -l cmp_ops
+  switch "$prevtoken"
+    case '' 'and' 'or' 'not'
+      for v in 'and' 'or' 'not'
+        set -e logical_ops[(contains -i $v $logical_ops)]
+      end
+    case '('
+      for v in 'and' 'or' ')'
+        set -e logical_ops[(contains -i $v $logical_ops)]
+      end
+    case ')'
+      set -e logical_ops[(contains -i '(' $logical_ops)]
+    case l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
+      set logical_ops
+      set list_tags
+      set list_values 1
+    case '*'
+      # not an operator. Tag or tag=value
+      if not set -l eqindex (string match -arn '(?<!\\\)=' $prevtoken)
+        set cmp_ops l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
+      end
+  end
+  switch $curtoken
+    case '*=*'
+      set eqindex (string match -rn '(?<!\\\)=' $curtoken)
+      if test (count $eqindex) -gt 0
+        set eqindex (string split ' ' $eqindex[1])[1]
+        set values_for_tag (string sub -l (math eqindex-1) $curtoken)
+        set values_for_tag (string unescape $values_for_tag)
+	echo "tval found, eqindex='$eqindex' values_for_tag='$values_for_tag'" >> $log
+        echo "eqindex count " (count $eqindex) >> $log
+      end
+  end
+  if test (count $cmp_ops) -gt 0
+    printf '%s\n' $cmp_ops
+  end
+  begin
+    if test (count $logical_ops) -gt 0
+      printf '%s\n' $logical_ops
+    end
+    if test -n "$list_tags"
+      __fish_print_tmsu_tags $argv
+    end
+    if test -n "$list_values"
+      __fish_print_tmsu_values $argv
+    end
+    if test -n "$values_for_tag"
+     echo "tval2 values_for_tag='$values_for_tag'" >> $log
+      __fish_print_tmsu_tags --tag $values_for_tag $argv
+    end
+  end
+# | while read v; string escape --no-quoted "$v";end
+end
+
 # derived from __fish_git_needs_command
 function __fish_tmsu_needs_command
     set cmd (commandline -opc)
@@ -272,6 +378,7 @@ complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = dup
 
 # files/query
 set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c files query'
+complete -c tmsu -n $co -f -a '(__fish_tmsu_complete_query (commandline -cpo)[2..-1])'
 complete -c tmsu -n $co -f -s d -l directory --description 'list only items that are directories'
 complete -c tmsu -n $co -f -s f -l file --description 'list only items that are files'
 complete -c tmsu -n $co -f -s 0 -l print0 --description 'delimit files with a NUL character rather than newline'
@@ -334,16 +441,8 @@ complete -c tmsu -n $co -f -r -s t -l tags --description 'the set of tags to app
 complete -c tmsu -n "$co;and __fish_tmsu_has_file" -f -r -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
 # XXX this needs to be a custom function, with the following rules
 #
-# and/or/not must follow a tag, tag=value, value, or ) token
-# comparison operators must follow a tag
-# values must be suggested when last tokens are TAG CMP
-# 'tag=' versions of plain tags must be suggested (at least
-# when last token is TAG with no =). When completing them,
-# the values should be fetched (ie. tmsu values $tag)
-# to create tag=value candidates.
-# ( must not follow a comparison operator.
-#
-complete -c tmsu -n $co -f -r -s w -l where --description 'tags files matching QUERY' -a '(__fish_print_tmsu_tags --ops (commandline -cpo)[2..-1])'
+
+complete -c tmsu -n $co -f -r -s w -l where --description 'tags files matching QUERY' -a '(__fish_tmsu_complete_query (commandline -cpo)[2..-1])'
 complete -c tmsu -n $co -f -s r -l recursive --description 'recursively apply tags to directory contents'
 complete -c tmsu -n $co -r -s f -l from --description 'copy tags from the SOURCE file'
 complete -c tmsu -n $co -f -s c -l create --description 'create tags or values without tagging any files'

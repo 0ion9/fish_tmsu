@@ -281,65 +281,75 @@ function __fish_tmsu_needs_command
     return 1
 end
 
-function __fish_tmsu_want_file
-  if not set -l subc (__fish_tmsu_needs_command);
-    switch subc
-      case tag
-	if __fish_contains_opt -s c -l create
-          return 1;
-	else 
-#          if 
-#last_token_is -s t -l tags -s w -l where;
-        end
-        echo stubbed
-	# if last opt was -t/--tags/-w/--where, then no
-        # if -c opt, then no.
-    end
-  else
-    return 1
-  end
-end
-
 # note: copy + rename offer tagnames unconditionally
 #       (including in positions where you don't want an existing tagname)
 #       This is intentional, so that you can use tab-completion to tell
 #	whether the new name will collide with anything.
 
 # config
+
 # COPY/CP completed
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c copy cp;' -f -a '(__fish_print_tmsu_tags)'
+
 # DELETE/DEL/RM completed
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c delete del rm' -f -l value --description 'delete a value'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c delete del rm; and __fish_contains_opt value' -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c delete del rm; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c delete del rm'
+complete -c tmsu -n "$co" -f -l value --description 'delete a value'
+complete -c tmsu -n "$co; and __fish_contains_opt value" -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co; and not __fish_contains_opt value" -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+
 # DUPES completed
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = dupes' -s r -l recursive --description 'recursively check directory contents'
+
 # files/query
+
 # HELP completed
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = help' -f -s l -l list --description 'list commands'
 
 # imply
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = imply' -f -s d -l delete --description 'deletes the tag implication'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = imply' -f -a '(__fish_print_tmsu_tags_or_tvalues (commandline -cpo)[2..-1])'
-# init
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = imply'
+complete -c tmsu -n "$co" -f -s d -l delete --description 'deletes the tag implication'
+complete -c tmsu -n "$co" -f -a '(__fish_print_tmsu_tags_or_tvalues (commandline -cpo)[2..-1])'
+
+# INIT completed
+complete -c tmsu -n "not set -l c (__fish_tmsu_needs_command); and test $c = init" -f -a '(__fish_complete_directories (commandline -ct))'
+
 # MERGE completed
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = merge' -f -l value --description 'merge values'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = merge; and __fish_contains_opt value' -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = merge; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = merge'
+complete -c tmsu -n "$co" -f -l value --description 'merge values'
+complete -c tmsu -n "$co; and __fish_contains_opt value" -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+
 # mount
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = mount'
+complete -c tmsu -n "$co" -f -r -s o -l options --description 'mount options (passed to fusermount)'
+# XXX detect specification of FILE and then only offer directory completion.
+
 # RENAME/MV completed
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c rename mv' -f -l value --description 'rename a value'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c rename mv; and __fish_contains_opt value' -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c rename mv; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c rename mv'
+complete -c tmsu -n "$co" -f -l value --description 'rename a value'
+complete -c tmsu -n "$co; and __fish_contains_opt value" -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+
 # repair/fix
-# status
+set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c repair fix'
+complete -c tmsu -n "$co" -f -s p -l path --description 'limit repair to files in database under path'
+complete -c tmsu -n "$co" -f -s P -l pretend --description 'do not make any changes'
+complete -c tmsu -n "$co" -f -s R -l remove --description 'remove missing files from the database'
+complete -c tmsu -n "$co" -f -s m -l manual --description 'manually relocate files'
+complete -c tmsu -n "$co" -f -s u -l unmodified --description 'recalculate fingerprints for unmodified files'
+complete -c tmsu -n "$co" -f -l rationalize --description 'remove explicit taggings where an implicit tagging exists'
+# XXX count # of arguments to `repair --manual`, offer no completions after second path argument
+
+# STATUS completed
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = status'
+complete -c tmsu -n $co -f -s d -l directory --description 'do not examine directory contents (non-recursive)'
+complete -c tmsu -n $co -f -s P -l no-dereference --description 'do not dereference symbolic links'
 
 # tag
 # XXX allow multiple tags to be completed,
 # as in `tmsu tag -t '2002 bana<TAB>`. Partly done but fragile
 # XXX similar for query
 set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = tag'
-#complete -c tmsu -n "$co;and not __fish_tmsu_has_file"
 complete -c tmsu -n $co -f -r -s t -l tags --description 'the set of tags to apply' -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
 complete -c tmsu -n "$co;and __fish_tmsu_has_file" -f -r -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
 # XXX this needs to be a custom function, with the following rules
@@ -363,33 +373,42 @@ complete -c tmsu -n $co -f -s P -l no-dereference --description 'do not follow s
 
 
 # tags
+
 # unmount/umount
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = umount' -f -s a -l all --description 'unmounts all mounted TMSU file-systems'
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = umount'
+complete -c tmsu -n "$co" -f -s a -l all --description 'unmounts all mounted TMSU file-systems'
 # XXX identify only TMSU (FUSEFS?) mountpoints
-complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = umount' -a '(__fish_print_mounted)'
+complete -c tmsu -n "$co" -a '(__fish_print_mounted)'
 
 # untag
-# untagged
+
+# UNTAGGED completed
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = untagged'
+complete -c tmsu -n $co -f -s c -l count --description 'list the number of files rather than their names'
+complete -c tmsu -n $co -f -s d -l directory --description 'do not examine directory contents (non-recursive)'
+complete -c tmsu -n $co -f -s P -l no-dereference --description 'do not dereference symbolic links'
+complete -c tmsu -n $co -f -a '(__fish_complete_directories (commandline -ct))'
+
 # VALUES completed
 set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = values'
 complete -c tmsu -n $co -f -s c -l count --description 'list # of values rather than their names'
 complete -c tmsu -n $co -f -s 1 --description 'list one value per line'
 complete -c tmsu -n $co -a '(__fish_print_tmsu_tags)'
-#complete -c tmsu -n 'set -l c (__fish_tmsu_needs_command) or test $c = values' -f -a '(__fish_print_tmsu_tags (commandline -cpo))'
 
-# TAG: files should be offered IFF 
-#        
+#complete -c tmsu -n 'set -l c (__fish_tmsu_needs_command) or test $c = values' -f -a '(__fish_print_tmsu_tags (commandline -cpo))'
+#
+#
 #complete -c tmsu - '__fish_tmsu_subcommand tag; and not __fish_contains_opt -s c -l create'
 
-# __fish_commandline_insert_escaped 
-# __fish_commandline_is_singlequoted 
+# __fish_commandline_insert_escaped
+# __fish_commandline_is_singlequoted
 # __fish_commandline_test
 # __fish_complete_cd __fish_complete_command
 # __fish_complete_directories
 # __fish_complete_file_url
-# __fish_complete_list 
-# __fish_complete_path   
-# __fish_complete_subcommand 
+# __fish_complete_list
+# __fish_complete_path
+# __fish_complete_subcommand
 # __fish_complete_suffix
 # __fish_contains_opt
 # __fish_describe_command

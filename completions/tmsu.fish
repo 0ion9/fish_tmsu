@@ -1,7 +1,7 @@
 # tmsu completion. Requires functions/__fish_expand_userdir.fish and __fish_tmsu_database.fish
 #
 
-set -l log /tmp/.fishtmsu.log
+set -u log /tmp/.fishtmsu.log
 
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s v -l verbose --description 'show verbose messages.'
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -s h -l help --description 'show help and exit.'
@@ -56,6 +56,10 @@ function __fish_print_tmsu_tags
   end
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
+    if test -z "$db"
+      # DB doesn't exist
+      return
+    end
     set arg --database $db
   end
   # XXX use __fish_commandline_is_singlequoted instead of this hack.
@@ -100,6 +104,10 @@ function __fish_print_tmsu_values
   set -l arg
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
+    if test -z "$db"
+      # DB doesn't exist
+      return
+    end
     set arg --database $db
   end
   tmsu $arg values
@@ -112,6 +120,10 @@ function __fish_print_tmsu_values_for_tag
   set -l arg
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
+    if test -z "$db"
+      # DB doesn't exist
+      return
+    end
     set arg --database $db
   end
   tmsu $arg values $tag
@@ -124,6 +136,10 @@ function __fish_print_tmsu_tags_or_tvalues
   set -l arg
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
+    if test -z "$db"
+      # DB doesn't exist
+      return
+    end
     set arg --database $db
   end
   switch $tag

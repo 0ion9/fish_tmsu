@@ -1,4 +1,4 @@
-# tmsu
+# tmsu completion. Requires functions/__fish_expand_userdir.fish and __fish_tmsu_database.fish
 #
 
 set -l log /tmp/.fishtmsu.log
@@ -12,62 +12,11 @@ complete -c tmsu -n 'set -l c (__fish_tmsu_needs_command); or test $c = help' -f
 # XXX works with --color=foo but not --color foo
 complete -c tmsu -n '__fish_tmsu_needs_command' -f -r -l color -a 'auto always never' --description "use color: auto/always/never."
 
-function __fish_expand_userdir -d 'Expand user directory reference. Surely there is a better way to do this.'
-  set argv (string replace -r '^~/' "$HOME/" $argv)
-  set argv (string replace -r '^~$' "$HOME" $argv)
-  set final
-  for a in $argv
-    set len (string length $a)
-    for v in (string match -rn '^~[^~();$/]+(?=/|$)' $a)
-      set start $v[1]
-      set l $v[2]
-      set parts
-      if test $start -gt 1
-        set -a parts (string sub -l (math start-1) $a)
-      end
-      # eval hackery. But reasonably safe since we disallow () $ ;
-      set -a parts (eval "echo "(string sub -s $start -l $l $a))
-      if test (math start+l) -lt len
-        set -a parts (string sub -s (math start+l))
-      end
-      set a (string join '' parts)
-      set len (string length $a)
-    end
-    set -a final $a
-  end
-  printf '%s\n' $final
-end
-
-function __fish_tmsu_db -d 'Return active tmsu DB, given commandline args'
-  # if -D, then use that
-  set -l nextarg
-  for a in $argv
-    switch $a
-      case config copy delete dupes files help imply info init merge mount rename repair status tag tags unmount untag untagged values
-        # No -D/--database before subcommand == no database specified
-        break
-      case '-D=*' '--database=*'
-        __fish_expand_userdir (string split -m 1 = -- $a)[2]
-        return
-      case '-D' '--database'
-        set nextarg y
-      case '*'
-	echo "db:nextarg=~$nextarg~ a=$a" >> $log
-	if test -n "$nextarg"
-          __fish_expand_userdir $a
-          return
-	end
-        continue
-    end
-  end
-  tmsu info | fgrep Database: | cut -d ' ' -f 2-
-end
-
 function __fish_print_tmsu_tags_old
   set -l db
   set -l arg
   if test -n "$argv[1]"
-    set db (__fish_tmsu_db $argv)
+    set db (__fish_tmsu_database $argv)
     set arg --database $db
   end
   set -l tok (commandline -t)
@@ -106,7 +55,7 @@ function __fish_print_tmsu_tags
     set showops 1
   end
   if test -n "$argv[1]"
-    set db (__fish_tmsu_db $argv)
+    set db (__fish_tmsu_database $argv)
     set arg --database $db
   end
   # XXX use __fish_commandline_is_singlequoted instead of this hack.
@@ -150,7 +99,7 @@ function __fish_print_tmsu_values
   set -l db
   set -l arg
   if test -n "$argv[1]"
-    set db (__fish_tmsu_db $argv)
+    set db (__fish_tmsu_database $argv)
     set arg --database $db
   end
   tmsu $arg values
@@ -162,7 +111,7 @@ function __fish_print_tmsu_values_for_tag
   set argv $argv[2..-1]
   set -l arg
   if test -n "$argv[1]"
-    set db (__fish_tmsu_db $argv)
+    set db (__fish_tmsu_database $argv)
     set arg --database $db
   end
   tmsu $arg values $tag
@@ -174,7 +123,7 @@ function __fish_print_tmsu_tags_or_tvalues
   set argv $argv[2..-1]
   set -l arg
   if test -n "$argv[1]"
-    set db (__fish_tmsu_db $argv)
+    set db (__fish_tmsu_database $argv)
     set arg --database $db
   end
   switch $tag

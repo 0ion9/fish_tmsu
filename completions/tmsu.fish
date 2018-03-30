@@ -25,7 +25,7 @@ function __fish_print_tmsu_tags_old
     set isquoted 1
   end
   #
-  printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok")
+  printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok") >> $log
   printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> $log
   if test $isquoted = 1; and test (string sub -s -1 -l 1 "$tok") = " "
     printf "fptt tok!: -%s-\n" $tok >> $log
@@ -76,7 +76,7 @@ function __fish_print_tmsu_tags
   if contains (string sub -s 1 -l 1 "$tok") '"' "'"
     set isquoted 1
   end
-  printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok")
+  printf "fptt head: -%s-\n" (string sub -s 1 -l 1 "$tok") >> $log
   printf "fptt tok: -%s- / isquoted $isquoted\n" $tok >> $log
   if test $isquoted = 1; and test (string sub -s -1 -l 1 "$tok") = " "
     printf "fptt tok!: -%s-\n" $tok >> $log
@@ -127,6 +127,12 @@ end
 function __fish_print_tmsu_values
   set -l db
   set -l arg
+  set -l tag
+  if test "$argv[1]" = "--tag"
+    echo "fptv: tag set to $argv[2]" >> $log
+    set tag $argv[2]
+    set argv $argv[3..-1]
+  end
   if test -n "$argv[1]"
     set db (__fish_tmsu_database $argv)
     if test -z "$db"
@@ -135,7 +141,11 @@ function __fish_print_tmsu_values
     end
     set arg --database $db
   end
-  tmsu $arg values
+  if test -n "$tag"
+    tmsu $arg values $tag
+  else
+    tmsu $arg values
+  end
 end
 
 function __fish_print_tmsu_values_for_tag
@@ -281,7 +291,11 @@ function __fish_tmsu_complete_query
     case l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
       set logical_ops
       set list_tags
-      set list_values 1
+      if test -n "$argv[-2]"
+        set list_values "$argv[-2]"
+      else
+        set list_values ''
+      end
     case '*'
       # not an operator. Tag or tag=value
       if not set -l eqindex (string match -arn '(?<!\\\)=' $prevtoken)
@@ -309,8 +323,12 @@ function __fish_tmsu_complete_query
     if test -n "$list_tags"
       __fish_print_tmsu_tags $argv
     end
-    if test -n "$list_values"
-      __fish_print_tmsu_values $argv
+    if test (count $list_values) -gt 0
+      if test -n $list_values[1]
+        __fish_print_tmsu_values --tag $list_values $argv
+      else
+        __fish_print_tmsu_values $argv
+      end
     end
     if test -n "$values_for_tag"
      echo "tval2 values_for_tag='$values_for_tag'" >> $log

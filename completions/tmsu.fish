@@ -265,13 +265,13 @@ complete -c tmsu -n "$co" -f -s d -l delete --description 'deletes the tag impli
 complete -c tmsu -n "$co" -f -a '(__fish_print_tmsu_tags_or_tvalues (commandline -cpo)[2..-1])'
 
 # INIT completed
-complete -c tmsu -n "not set -l c (__fish_tmsu_needs_command); and test $c = init" -f -a '(__fish_complete_directories (commandline -ct))'
+complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = init' -f -a '(__fish_complete_directories (commandline -ct))'
 
 # MERGE completed
 set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = merge'
 complete -c tmsu -n "$co" -f -l value --description 'merge values'
 complete -c tmsu -n "$co; and __fish_contains_opt value" -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
-complete -c tmsu -n "$co; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co; and not __fish_contains_opt value" -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
 
 # mount
 set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = mount'
@@ -282,7 +282,7 @@ complete -c tmsu -n "$co" -f -r -s o -l options --description 'mount options (pa
 set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c rename mv'
 complete -c tmsu -n "$co" -f -l value --description 'rename a value'
 complete -c tmsu -n "$co; and __fish_contains_opt value" -f -a '(__fish_print_tmsu_values (commandline -cpo)[2..-1])'
-complete -c tmsu -n "$co; and not __fish_contains_opt value' -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co; and not __fish_contains_opt value" -f -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
 
 # repair/fix
 set -l co 'not set -l c (__fish_tmsu_needs_command); and contains $c repair fix'

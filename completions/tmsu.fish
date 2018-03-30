@@ -174,7 +174,8 @@ function __fish_tmsu_has_file
   end
   echo "subcmd" $subcmd >> $log
   set -l skip_next 1
-  if test $subcmd[1] = tag;
+  switch $subcmd[1]
+    case tag
     echo "tag on - " $subcmd >> $log
     for v in $subcmd[2..-1]
       test $skip_next -eq 0
@@ -183,11 +184,9 @@ function __fish_tmsu_has_file
       switch $v
         case '-c' '--create' '-w' '-w*' '--where' '--where='
           return 0
-	case '-f' '--from' '-f*' '--from=*'
+	case '-f' '--from' '-f*' '--from=*' '-t' '--tags'\
+             '-t*' '--tags=*'
 	  return 1
-        case '-t' '--tags'
-          set skip_next 0
-          continue
         case '-*'
           continue
         case '*'
@@ -195,13 +194,14 @@ function __fish_tmsu_has_file
           return 0
       end
     end
-  else
+    case untag
     for v in $subcmd[2..-1]
       test $skip_next -eq 0
       and set skip_next 1
       and continue
       switch $v
         case '-t' '--tags'
+          return 1
           set skip_next 0
           continue
         case '-*'
@@ -334,7 +334,7 @@ complete -c tmsu -n "$co;and __fish_tmsu_has_file" -f -r -a '(__fish_print_tmsu_
 # ( must not follow a comparison operator.
 #
 complete -c tmsu -n $co -f -r -s w -l where --description 'tags files matching QUERY' -a '(__fish_print_tmsu_tags --ops (commandline -cpo)[2..-1])'
-complete -c tmsu -n $co -f -s r -l recursive --description 'Recursively apply tags to directory contents'
+complete -c tmsu -n $co -f -s r -l recursive --description 'recursively apply tags to directory contents'
 complete -c tmsu -n $co -r -s f -l from --description 'copy tags from the SOURCE file'
 complete -c tmsu -n $co -f -s c -l create --description 'create tags or values without tagging any files'
 complete -c tmsu -n $co -f -s e -l explicit --description 'explicitly apply tags even if they are already implied'
@@ -351,6 +351,13 @@ complete -c tmsu -n "$co" -f -s a -l all --description 'unmounts all mounted TMS
 complete -c tmsu -n "$co" -a '(__fish_print_mounted)'
 
 # untag
+set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = untag'
+complete -c tmsu -n $co -f -r -s t -l tags --description 'the set of tags to remove' -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+# XXX could be folded into tag
+complete -c tmsu -n "$co;and __fish_tmsu_has_file" -f -r -a '(__fish_print_tmsu_tags (commandline -cpo)[2..-1])'
+complete -c tmsu -n "$co" -f -s a -l all --description 'strip each file of all tags'
+complete -c tmsu -n $co -f -s r -l recursive --description 'recursively remove tags from directory contents'
+complete -c tmsu -n $co -f -s P -l no-dereference --description 'do not follow symbolic links (untag the link itself)'
 
 # UNTAGGED completed
 set -l co 'not set -l c (__fish_tmsu_needs_command); and test $c = untagged'

@@ -298,7 +298,7 @@ function __fish_tmsu_complete_query
       end
     case '*'
       # not an operator. Tag or tag=value
-      if not set -l eqindex (string match -arn '(?<!\\\)=' $prevtoken)
+      if not set -l eqindex (string match -arn '(?<!\\\)=' -- $prevtoken)
         set cmp_ops l{t,e} g{t,e} eq ne "<"{,=} {!,=}= ">"{,=}
       end
   end

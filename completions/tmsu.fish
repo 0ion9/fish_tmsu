@@ -380,7 +380,12 @@ end
 #       This is intentional, so that you can use tab-completion to tell
 #	whether the new name will collide with anything.
 
-# config
+# CONFIG completed
+set -l conf {autoCreate{Tags,Values},reportDuplicates}{,={yes,no}} directoryFingerprintAlgorithm{,={none,}}
+set -a conf fileFingerprintAlgorithm{,=none,={dynamic:,}{SHA{1,256},MD5}} symlinkFingerprintAlgorithm{,={none,follow,targetName{,NoExt}}}
+complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and test $c = config;' -f -a "$conf"
+set -e conf
+
 
 # COPY/CP completed
 complete -c tmsu -n 'not set -l c (__fish_tmsu_needs_command); and contains $c copy cp;' -f -a '(__fish_print_tmsu_tags)'

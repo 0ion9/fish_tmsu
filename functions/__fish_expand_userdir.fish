@@ -10,17 +10,17 @@ function __fish_expand_userdir -d 'Expand user directory reference. Surely there
       set l $v[2]
       set parts
       if test $start -gt 1
-        set -a parts (string sub -l (math start-1) $a)
+        set parts $parts (string sub -l (math start-1) $a)
       end
       # eval hackery. But reasonably safe since we disallow () $ ;
-      eval "set -a parts "(string sub -s $start -l $l $a)
+      eval 'set parts $parts '(string sub -s $start -l $l $a)
       if test (math start+l) -le $len
-        set -a parts (string sub -s (math start+l) $a)
+        set parts $parts (string sub -s (math start+l) $a)
       end
       set a (string join '' $parts)
       set len (string length $a)
     end
-    set -a final $a
+    set final $final $a
   end
   printf '%s\n' $final
 end

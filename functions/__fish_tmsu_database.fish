@@ -30,5 +30,5 @@ function __fish_tmsu_database -d 'Return active tmsu DB, given commandline args'
     __fish_expand_userdir "$TMSU_DB"
     return
   end
-  tmsu info 2>/dev/null | fgrep Database: | cut -d ' ' -f 2-
+  tmsu info 2>/dev/null | string match 'Database: *' | cut -d ' ' -f 2-
 end
